@@ -216,6 +216,13 @@ export const useGameLogic = () => {
     }
   };
 
+  const exitToMenu = useCallback(() => {
+    setGameStarted(false);
+    setIsGameOver(false);
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (gravityRef.current) clearInterval(gravityRef.current);
+  }, []);
+
   return {
     board,
     targetNumber,
@@ -226,6 +233,7 @@ export const useGameLogic = () => {
     isGameOver,
     gameStarted,
     initializeGame,
+    exitToMenu,
     selectBlock,
     confirmSelection,
     cancelSelection: () => setSelectedBlocks([])

@@ -18,6 +18,7 @@ export default function App() {
     isGameOver,
     gameStarted,
     initializeGame,
+    exitToMenu,
     selectBlock,
     confirmSelection,
     cancelSelection
@@ -33,7 +34,7 @@ export default function App() {
         if (saved) {
           setPlayerName(saved);
         } else {
-          setPlayerName('Oyuncu');
+          setPlayerName('');
         }
       } catch (e) {
         console.error(e);
@@ -142,6 +143,7 @@ export default function App() {
         currentScore={score}
         playerName={playerName}
         saveScore={true}
+        onExitToMenu={exitToMenu}
       />
 
       {/* Leaderboard Modal for Menu View-Only */}

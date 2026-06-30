@@ -3,7 +3,7 @@ import { Modal, View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '../constants/Theme';
 
-const LeaderboardModal = ({ visible, onClose, currentScore, playerName, saveScore }) => {
+const LeaderboardModal = ({ visible, onClose, currentScore, playerName, saveScore, onExitToMenu }) => {
   const [scores, setScores] = useState([]);
 
   useEffect(() => {
@@ -90,11 +90,20 @@ const LeaderboardModal = ({ visible, onClose, currentScore, playerName, saveScor
             />
           )}
 
-          <TouchableOpacity style={styles.button} onPress={onClose}>
-            <Text style={styles.buttonText}>
-              {saveScore ? 'Yeniden Başla' : 'Kapat'}
-            </Text>
-          </TouchableOpacity>
+          {saveScore ? (
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={onClose}>
+                <Text style={styles.buttonText}>Yeniden Başla</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.button, styles.secondaryButton]} onPress={onExitToMenu}>
+                <Text style={styles.buttonText}>Ana Menüye Dön</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={onClose}>
+              <Text style={styles.buttonText}>Kapat</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </Modal>
@@ -184,17 +193,32 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     fontWeight: 'bold',
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 10,
+  },
   button: {
-    backgroundColor: COLORS.textLight,
     borderRadius: 10,
     paddingVertical: 12,
-    paddingHorizontal: 30,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    marginHorizontal: 5,
     elevation: 2,
+  },
+  primaryButton: {
+    backgroundColor: COLORS.textLight,
+  },
+  secondaryButton: {
+    backgroundColor: '#3A3A5E',
   },
   buttonText: {
     color: 'white',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 14,
   },
 });
 
