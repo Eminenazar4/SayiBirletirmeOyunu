@@ -3,7 +3,7 @@ import { Modal, View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '../constants/Theme';
 
-const LeaderboardModal = ({ visible, onClose, currentScore }) => {
+const LeaderboardModal = ({ visible, onClose, currentScore, playerName, saveScore }) => {
   const [scores, setScores] = useState([]);
 
   useEffect(() => {
@@ -17,29 +17,44 @@ const LeaderboardModal = ({ visible, onClose, currentScore }) => {
       const storedScores = await AsyncStorage.getItem('@leaderboard');
       let parsed = storedScores ? JSON.parse(storedScores) : [];
       
-      if (currentScore > 0) {
-        parsed.push({ score: currentScore, date: new Date().toISOString() });
-        // Sort descending
-        parsed.sort((a, b) => b.score - a.score);
-        // Keep top 10
+      if (saveScore && currentScore > 0) {
+        // Add new score with player name
+        parsed.push({
+          name: playerName || 'Oyuncu',
+          score: currentScore,
+          date: new Date().toISOString()
+        });
+        
+        // Sort by date descending (newest first) to get the most recent ones
+        parsed.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        // Keep only the last 10 games
         parsed = parsed.slice(0, 10);
+        
+        // Save the last 10 games to AsyncStorage
         await AsyncStorage.setItem('@leaderboard', JSON.stringify(parsed));
       }
       
-      setScores(parsed);
+      // For displaying, sort the 10 games from highest score to lowest score
+      const sortedForDisplay = [...parsed].sort((a, b) => b.score - a.score);
+      setScores(sortedForDisplay);
     } catch (e) {
       console.error('Failed to load leaderboard', e);
     }
   };
 
   const renderItem = ({ item, index }) => {
-    const isCurrent = item.score === currentScore;
+    const isCurrent = saveScore && item.score === currentScore && item.name === playerName;
     const d = new Date(item.date);
-    const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()} ${d.getHours()}:${d.getMinutes()}`;
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()} ${d.getHours()}:${minutes}`;
     return (
       <View style={[styles.scoreItem, isCurrent && styles.currentScoreItem]}>
         <Text style={styles.rankText}>{index + 1}.</Text>
-        <Text style={styles.dateText}>{dateStr}</Text>
+        <View style={styles.nameDateContainer}>
+          <Text style={styles.playerNameText}>{item.name}</Text>
+          <Text style={styles.dateText}>{dateStr}</Text>
+        </View>
         <Text style={styles.scoreText}>{item.score} Puan</Text>
       </View>
     );
@@ -54,13 +69,17 @@ const LeaderboardModal = ({ visible, onClose, currentScore }) => {
     >
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
-          <Text style={styles.modalTitle}>Oyun Bitti!</Text>
-          <Text style={styles.subTitle}>Skorunuz: {currentScore}</Text>
+          <Text style={styles.modalTitle}>
+            {saveScore ? 'Oyun Bitti!' : 'Liderlik Tablosu'}
+          </Text>
+          <Text style={styles.subTitle}>
+            {saveScore ? `Skorunuz: ${currentScore}` : 'Son 10 Oyunun En İyileri'}
+          </Text>
           
-          <Text style={styles.leaderboardTitle}>Liderlik Tablosu</Text>
+          {saveScore && <Text style={styles.leaderboardTitle}>Liderlik Tablosu</Text>}
           
           {scores.length === 0 ? (
-            <Text style={{ color: '#FFF' }}>Henüz skor yok.</Text>
+            <Text style={{ color: '#FFF', marginVertical: 20 }}>Henüz skor yok.</Text>
           ) : (
             <FlatList
               data={scores}
@@ -72,7 +91,9 @@ const LeaderboardModal = ({ visible, onClose, currentScore }) => {
           )}
 
           <TouchableOpacity style={styles.button} onPress={onClose}>
-            <Text style={styles.buttonText}>Yeniden Başla</Text>
+            <Text style={styles.buttonText}>
+              {saveScore ? 'Yeniden Başla' : 'Kapat'}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -109,7 +130,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   subTitle: {
-    fontSize: 18,
+    fontSize: 16,
     color: COLORS.textLight,
     marginBottom: 20,
   },
@@ -127,6 +148,7 @@ const styles = StyleSheet.create({
   scoreItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.05)',
     padding: 12,
     borderRadius: 8,
@@ -140,11 +162,23 @@ const styles = StyleSheet.create({
   rankText: {
     color: '#FFF',
     fontWeight: 'bold',
-    width: 30,
+    width: 25,
+  },
+  nameDateContainer: {
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  playerNameText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 15,
   },
   dateText: {
     color: '#AAA',
-    flex: 1,
+    fontSize: 11,
+    marginTop: 2,
   },
   scoreText: {
     color: COLORS.textLight,

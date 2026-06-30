@@ -1,5 +1,6 @@
-import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, StatusBar, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, StatusBar, Alert, TextInput } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useGameLogic } from './src/hooks/useGameLogic';
 import Board from './src/components/Board';
 import Header from './src/components/Header';
@@ -22,6 +23,38 @@ export default function App() {
     cancelSelection
   } = useGameLogic();
 
+  const [playerName, setPlayerName] = useState('');
+  const [viewLeaderboardOnly, setViewLeaderboardOnly] = useState(false);
+
+  useEffect(() => {
+    const getSavedName = async () => {
+      try {
+        const saved = await AsyncStorage.getItem('@player_name');
+        if (saved) {
+          setPlayerName(saved);
+        } else {
+          setPlayerName('Oyuncu');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    getSavedName();
+  }, []);
+
+  const handleStartGame = async () => {
+    if (!playerName.trim()) {
+      Alert.alert('Hata', 'Lütfen bir isim girin!');
+      return;
+    }
+    try {
+      await AsyncStorage.setItem('@player_name', playerName.trim());
+    } catch (e) {
+      console.error(e);
+    }
+    initializeGame();
+  };
+
   const currentSelectionSum = selectedBlocks.reduce((sum, item) => sum + item.block.value, 0);
 
   return (
@@ -32,8 +65,28 @@ export default function App() {
         <View style={styles.centerContainer}>
           <Text style={styles.title}>SAYI BİRLEŞTİRME</Text>
           <Text style={styles.subtitle}>STRATEJİK OYUN</Text>
-          <TouchableOpacity style={styles.startButton} onPress={initializeGame}>
+          
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Oyuncu Adı:</Text>
+            <TextInput
+              style={styles.textInput}
+              value={playerName}
+              onChangeText={setPlayerName}
+              placeholder="Adınızı yazın..."
+              placeholderTextColor="#888"
+              maxLength={12}
+            />
+          </View>
+
+          <TouchableOpacity style={styles.startButton} onPress={handleStartGame}>
             <Text style={styles.startText}>OYUNA BAŞLA</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.leaderboardButton} 
+            onPress={() => setViewLeaderboardOnly(true)}
+          >
+            <Text style={styles.leaderboardButtonText}>LİDERLİK TABLOSU</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -87,6 +140,17 @@ export default function App() {
         visible={isGameOver} 
         onClose={initializeGame}
         currentScore={score}
+        playerName={playerName}
+        saveScore={true}
+      />
+
+      {/* Leaderboard Modal for Menu View-Only */}
+      <LeaderboardModal 
+        visible={viewLeaderboardOnly} 
+        onClose={() => setViewLeaderboardOnly(false)}
+        currentScore={0}
+        playerName=""
+        saveScore={false}
       />
       
     </SafeAreaView>
@@ -115,7 +179,27 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: COLORS.textLight,
-    marginBottom: 50,
+    marginBottom: 30,
+  },
+  inputContainer: {
+    width: '80%',
+    marginBottom: 30,
+  },
+  inputLabel: {
+    color: '#CCC',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  textInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    color: '#FFF',
+    fontSize: 16,
   },
   startButton: {
     backgroundColor: COLORS.textLight,
@@ -127,6 +211,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
+    marginBottom: 15,
+  },
+  leaderboardButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+  },
+  leaderboardButtonText: {
+    color: COLORS.textLight,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   startText: {
     color: '#FFF',
