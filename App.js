@@ -27,31 +27,10 @@ export default function App() {
   const [playerName, setPlayerName] = useState('');
   const [viewLeaderboardOnly, setViewLeaderboardOnly] = useState(false);
 
-  useEffect(() => {
-    const getSavedName = async () => {
-      try {
-        const saved = await AsyncStorage.getItem('@player_name');
-        if (saved) {
-          setPlayerName(saved);
-        } else {
-          setPlayerName('');
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    getSavedName();
-  }, []);
-
-  const handleStartGame = async () => {
+  const handleStartGame = () => {
     if (!playerName.trim()) {
       Alert.alert('Hata', 'Lütfen bir isim girin!');
       return;
-    }
-    try {
-      await AsyncStorage.setItem('@player_name', playerName.trim());
-    } catch (e) {
-      console.error(e);
     }
     initializeGame();
   };
@@ -143,7 +122,10 @@ export default function App() {
         currentScore={score}
         playerName={playerName}
         saveScore={true}
-        onExitToMenu={exitToMenu}
+        onExitToMenu={() => {
+          exitToMenu();
+          setPlayerName('');
+        }}
       />
 
       {/* Leaderboard Modal for Menu View-Only */}

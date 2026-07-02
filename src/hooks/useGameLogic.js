@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Alert } from 'react-native';
 import { BLOCK_MAPPING, COLORS, GAME_CONSTANTS } from '../constants/Theme';
 
 const { ROWS, COLS, INITIAL_SPEED_MS, MIN_SPEED_MS, MAX_WRONG_ATTEMPTS } = GAME_CONSTANTS;
@@ -195,13 +196,30 @@ export const useGameLogic = () => {
 
   const handleSelectionFail = () => {
     const newWrong = wrongAttempts + 1;
-    setWrongAttempts(newWrong);
     setSelectedBlocks([]);
 
     if (newWrong >= MAX_WRONG_ATTEMPTS) {
-      setIsGameOver(true);
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (gravityRef.current) clearInterval(gravityRef.current);
+      setWrongAttempts(0); // Ceza uygulandığı için sayacı sıfırla
+      
+      // Ceza Uygulanması: bütün sütunlardan yeni bloklar indirilecektir.
+      setBoard(prevBoard => {
+        let newBoard = prevBoard.map(row => [...row]);
+        for (let c = 0; c < COLS; c++) {
+          if (newBoard[0][c] === null) {
+            newBoard[0][c] = createRandomBlock();
+          }
+        }
+        return newBoard;
+      });
+      
+      startGravity();
+      
+      Alert.alert(
+        "Ceza!",
+        "3 kez yanlış eşleştirme yaptınız. Bütün sütunlara yeni bloklar eklendi!"
+      );
+    } else {
+      setWrongAttempts(newWrong);
     }
   };
 
